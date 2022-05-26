@@ -780,7 +780,7 @@ def sort_recipients(raw_message, from_addr, to_addrs):
         send_msg(raw_message.as_string(), recipients_left)
         return
 
-    first_payload = first_payload.get_payload(decode=True)
+    first_payload = first_payload.get_payload(decode=True).decode()
     if (
         "-----BEGIN PGP MESSAGE-----" in first_payload
         and "-----END PGP MESSAGE-----" in first_payload

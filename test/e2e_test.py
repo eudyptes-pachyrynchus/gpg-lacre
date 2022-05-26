@@ -1,4 +1,4 @@
-#!/usr/local/bin/python2
+#!/usr/local/bin/python3
 
 import configparser
 import difflib
@@ -11,7 +11,7 @@ EOL = "\n"
 RELAY_SCRIPT = "test/relay.py"
 CONFIG_FILE = "test/gpg-mailgate.conf"
 
-PYTHON_BIN = "python2.7"
+PYTHON_BIN = "python3"
 
 
 def build_config(config):
@@ -29,7 +29,7 @@ def build_config(config):
 
     cp.add_section("relay")
     cp.set("relay", "host", "localhost")
-    cp.set("relay", "port", config["port"])
+    cp.set("relay", "port", str(config["port"]))
 
     logging.debug(
         "Created config with keyhome=%s, cert_path=%s and relay at port %d"
@@ -81,13 +81,15 @@ def report_result(message_file, expected_file, test_output):
         print(diff_line)
 
 
-def execute_e2e_test(message_file, expected_file, **kwargs):
+def execute_e2e_test(message_file, expected_file, from_addr, port):
+    logging.debug("%s %s %s %d" % (message_file, expected_file, from_addr, port))
+
     test_command = "%s gpg-mailgate.py %s < %s" % (
         PYTHON_BIN,
-        kwargs["from_addr"],
+        from_addr,
         message_file,
     )
-    result_command = "%s %s %d" % (PYTHON_BIN, RELAY_SCRIPT, kwargs["port"])
+    result_command = "%s %s %d" % (PYTHON_BIN, RELAY_SCRIPT, port)
 
     logging.debug("Spawning: '%s'" % (result_command))
     pipe = os.popen(result_command, "r")
@@ -108,7 +110,6 @@ def execute_e2e_test(message_file, expected_file, **kwargs):
 def load_config():
     cp = configparser.ConfigParser()
     cp.read("test/e2e.ini")
-
     return cp
 
 
@@ -128,8 +129,13 @@ write_test_config(
     smime_certpath="test/certs",
 )
 
+logger = logging.getLogger()
+ConsoleOutputHandler = logging.StreamHandler()
+logger.addHandler(ConsoleOutputHandler)
+
 for case_no in range(1, config.getint("tests", "cases") + 1):
     case_name = "case-%d" % (case_no)
+    logging.debug(case_name)
 
     execute_e2e_test(
         config.get(case_name, "in"),

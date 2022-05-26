@@ -6,12 +6,12 @@ import smtplib
 import sys
 import syslog
 import traceback
-from configparser import RawConfigParser
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 import markdown
 import requests
+from ConfigParser import RawConfigParser
 from M2Crypto import BIO, SMIME, X509, Rand
 
 # Read configuration from /etc/gpg-mailgate.conf
@@ -25,7 +25,7 @@ for sect in _cfg.sections():
 
 
 def log(msg):
-    if "logging" in cfg and "file" in cfg["logging"]:
+    if cfg.has_key("logging") and cfg["logging"].has_key("file"):
         if cfg["logging"]["file"] == "syslog":
             syslog.syslog(syslog.LOG_INFO | syslog.LOG_MAIL, msg)
         else:
@@ -100,7 +100,7 @@ if __name__ == "__main__":
         raw_sig = sign_part.get_payload().replace("\n", "")
         # re-wrap signature so that it fits base64 standards
         cooked_sig = "\n".join(
-            raw_sig[pos : pos + 76] for pos in range(0, len(raw_sig), 76)
+            raw_sig[pos : pos + 76] for pos in xrange(0, len(raw_sig), 76)
         )
 
         # now, wrap the signature in a PKCS7 block
