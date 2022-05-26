@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from ConfigParser import RawConfigParser
+from configparser import RawConfigParser
 import email, os, smtplib, sys, traceback, markdown, syslog, requests
 from M2Crypto import BIO, Rand, SMIME, X509
 
@@ -17,7 +17,7 @@ for sect in _cfg.sections():
 		cfg[sect][name] = value
 
 def log(msg):
-	if cfg.has_key('logging') and cfg['logging'].has_key('file'):
+	if 'logging' in cfg and 'file' in cfg['logging']:
 		if cfg['logging']['file'] == "syslog":
 			syslog.syslog(syslog.LOG_INFO | syslog.LOG_MAIL, msg)
 		else:
@@ -80,7 +80,7 @@ if __name__ == "__main__":
 		if sign_type == 'smime':
 			raw_sig = sign_part.get_payload().replace("\n","")
 			# re-wrap signature so that it fits base64 standards
-			cooked_sig = '\n'.join(raw_sig[pos:pos+76] for pos in xrange(0, len(raw_sig), 76))
+			cooked_sig = '\n'.join(raw_sig[pos:pos+76] for pos in range(0, len(raw_sig), 76))
 			
 			# now, wrap the signature in a PKCS7 block
 			sig = """

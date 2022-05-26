@@ -55,7 +55,7 @@ def serve(port):
 	return message[:-len(EOM)]
 
 def error(msg):
-	print "ERROR: %s" % (msg)
+	print("ERROR: %s" % (msg))
 	sys.exit(1)
 
 
@@ -65,4 +65,4 @@ if len(sys.argv) < 2:
 port = int(sys.argv[1])
 body = serve(port)
 
-print body
+print(body)

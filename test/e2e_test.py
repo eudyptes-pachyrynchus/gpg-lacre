@@ -5,7 +5,7 @@ import sys
 
 import difflib
 
-import ConfigParser
+import configparser
 import logging
 
 EOL = "\n"
@@ -16,7 +16,7 @@ CONFIG_FILE = "test/gpg-mailgate.conf"
 PYTHON_BIN = "python2.7"
 
 def build_config(config):
-    cp = ConfigParser.ConfigParser()
+    cp = configparser.ConfigParser()
 
     cp.add_section("logging")
     cp.set("logging", "file", "/dev/stout")
@@ -54,7 +54,7 @@ def load_file(name):
 	return contents
 
 def strip_eols(strings):
-    return map(lambda s: s.strip("\r"), strings)
+    return [s.strip("\r") for s in strings]
 
 def compare(result, expected):
     result_lines = strip_eols(result.split(EOL))
@@ -68,11 +68,11 @@ def report_result(message_file, expected_file, test_output):
     expected = load_file(expected_file)
     diff = compare(test_output, expected)
     if len(list(diff)) > 0:
-        print "Output and the expected message (%s) don't match:" % (expected_file)
+        print("Output and the expected message (%s) don't match:" % (expected_file))
     else:
-        print "Message %s processed properly" % (message_file)
+        print("Message %s processed properly" % (message_file))
     for diff_line in diff:
-        print diff_line
+        print(diff_line)
 
 def execute_e2e_test(message_file, expected_file, **kwargs):
     test_command = "%s gpg-mailgate.py %s < %s" % (PYTHON_BIN, kwargs["from_addr"], message_file)
@@ -94,7 +94,7 @@ def execute_e2e_test(message_file, expected_file, **kwargs):
     report_result(message_file, expected_file, testout)
 
 def load_config():
-    cp = ConfigParser.ConfigParser()
+    cp = configparser.ConfigParser()
     cp.read("test/e2e.ini")
 
     return cp

@@ -19,7 +19,7 @@
 #	along with gpg-mailgate source code. If not, see <http://www.gnu.org/licenses/>.
 #
 
-from ConfigParser import RawConfigParser
+from configparser import RawConfigParser
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 import copy
@@ -94,7 +94,7 @@ def gpg_decrypt( raw_message, recipients ):
 		keys[fingerprint] = sanitize_case_sense(keys[fingerprint])
 
 	for to in recipients:
-		if to in keys.values() and not get_bool_from_cfg('default', 'dec_keymap_only', 'yes'):
+		if to in list(keys.values()) and not get_bool_from_cfg('default', 'dec_keymap_only', 'yes'):
 			gpg_to.append(to)
 		# Is this recipient defined in regex for default decryption?
 		elif not (dec_regex is None) and not (re.match(dec_regex, to) is None):
@@ -106,7 +106,7 @@ def gpg_decrypt( raw_message, recipients ):
 			if not cfg['dec_keymap'][to] in keys:
 				log("Key '%s' in decryption keymap not found in keyring for email address '%s'. Won't decrypt." % (cfg['dec_keymap'][to], to))
 				# Avoid unwanted encryption if set
-				if to in keys.values() and get_bool_from_cfg('default', 'failsave_dec', 'yes'):
+				if to in list(keys.values()) and get_bool_from_cfg('default', 'failsave_dec', 'yes'):
 					noenc_to.append(to)
 				else:
 					ungpg_to.append(to)
@@ -116,7 +116,7 @@ def gpg_decrypt( raw_message, recipients ):
 			if verbose:
 				log("Recipient (%s) not in PGP domain list for decrypting." % to)
 			# Avoid unwanted encryption if set
-			if to in keys.values() and get_bool_from_cfg('default', 'failsave_dec', 'yes'):
+			if to in list(keys.values()) and get_bool_from_cfg('default', 'failsave_dec', 'yes'):
 				noenc_to.append(to)
 			else:
 				ungpg_to.append(to)
@@ -317,7 +317,7 @@ def gpg_encrypt( raw_message, recipients ):
 				log("Key '%s' in encrypt keymap not found in keyring for email address '%s'." % (cfg['enc_keymap'][to], to))
 
 		# Check if key in keychain is present
-		if to in keys.values() and not get_bool_from_cfg('default', 'enc_keymap_only', 'yes'):
+		if to in list(keys.values()) and not get_bool_from_cfg('default', 'enc_keymap_only', 'yes'):
 			gpg_to.append( (to, to) )
 			continue
 
@@ -341,7 +341,7 @@ def gpg_encrypt( raw_message, recipients ):
 		ungpg_to.append(to)
 
 	if gpg_to != list():
-		log("Encrypting email to: %s" % ' '.join( map(lambda x: x[0], gpg_to) ))
+		log("Encrypting email to: %s" % ' '.join( [x[0] for x in gpg_to] ))
 
 		# Getting PGP style for recipient
 		gpg_to_smtp_mime = list()
@@ -378,7 +378,7 @@ def gpg_encrypt( raw_message, recipients ):
 			if get_bool_from_cfg('default', 'add_header', 'yes'):
 				raw_message_mime['X-GPG-Mailgate'] = 'Encrypted by GPG Mailgate'
 
-			if raw_message_mime.has_key('Content-Transfer-Encoding'):
+			if 'Content-Transfer-Encoding' in raw_message_mime:
                                 raw_message_mime.replace_header('Content-Transfer-Encoding','8BIT')
                         else:
                                 raw_message_mime['Content-Transfer-Encoding'] = '8BIT'
@@ -395,7 +395,7 @@ def gpg_encrypt( raw_message, recipients ):
 			if get_bool_from_cfg('default', 'add_header', 'yes'):
 				raw_message_inline['X-GPG-Mailgate'] = 'Encrypted by GPG Mailgate'
 
-			if raw_message_inline.has_key('Content-Transfer-Encoding'):
+			if 'Content-Transfer-Encoding' in raw_message_inline:
                                 raw_message_inline.replace_header('Content-Transfer-Encoding','8BIT')
                         else:
                                 raw_message_inline['Content-Transfer-Encoding'] = '8BIT'
@@ -443,7 +443,7 @@ def encrypt_all_payloads_mime( message, gpg_to_cmdline ):
 		# Workaround it here by prepending a blank line.
 		# This happens only on text only messages.
 		additionalSubHeader=""
-		if message.has_key('Content-Type') and not message['Content-Type'].startswith('multipart'):
+		if 'Content-Type' in message and not message['Content-Type'].startswith('multipart'):
 			additionalSubHeader="Content-Type: "+message['Content-Type']+"\n"
 		submsg2.set_payload(additionalSubHeader+"\n" +message.get_payload(decode=True))
 		check_nested = True
@@ -460,7 +460,7 @@ def encrypt_all_payloads_mime( message, gpg_to_cmdline ):
 	boundary = junk_msg.get_boundary()
 
     # This also modifies the boundary in the body of the message, ie it gets parsed.
-	if message.has_key('Content-Type'):
+	if 'Content-Type' in message:
 		message.replace_header('Content-Type', "multipart/encrypted; protocol=\"application/pgp-encrypted\";\nboundary=\"%s\"\n" % boundary)
 	else:
 		message['Content-Type'] = "multipart/encrypted; protocol=\"application/pgp-encrypted\";\nboundary=\"%s\"\n" % boundary
@@ -624,7 +624,7 @@ def get_first_payload( payloads ):
 
 def send_msg( message, recipients ):
 
-	recipients = filter(None, recipients)
+	recipients = [_f for _f in recipients if _f]
 	if recipients:
 		if not (get_bool_from_cfg('relay', 'host') and get_bool_from_cfg('relay', 'port')):
 			log("Missing settings for relay. Sending email aborted.")
@@ -632,7 +632,7 @@ def send_msg( message, recipients ):
 		log("Sending email to: <%s>" % '> <'.join( recipients ))
 		relay = (cfg['relay']['host'], int(cfg['relay']['port']))
 		smtp = smtplib.SMTP(relay[0], relay[1])
-                if cfg.has_key('relay') and cfg['relay'].has_key('starttls') and cfg['relay']['starttls'] == 'yes':
+                if 'relay' in cfg and 'starttls' in cfg['relay'] and cfg['relay']['starttls'] == 'yes':
                     smtp.starttls()
 		smtp.sendmail( from_addr, recipients, message )
 	else:
